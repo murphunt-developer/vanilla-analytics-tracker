@@ -3,82 +3,93 @@ const DESKTOP = 'desktop';
 const ROBOT = 'robot';
 const HUMAN = 'human';
 
-/* 
-Dimensions: 
-  - mobile-user
-  - desktop-user
-  - mobile-bot
-  - desktop-bot
-Metrics:
-  - page hits - H (each request to analytics server would be a request)
-  - first-contentfull-paint - FCP
-  - largest-contentful-paint - LCP
-  - 
-*/
+let analyticsData = {
+  fcp: undefined,
+  lcp: undefined,
+  device: undefined,
+  userType: undefined,
+};
+
+// setup performance observers
+initializeLcpObserver();
+initializeFcpObserver();
+
+analyticsData.device = isMobileDevice() ? MOBILE : DESKTOP;
+analyticsData.userType = isRobot() ? ROBOT : HUMAN;
 
 /**
  * Send analytic data to server to be recorded
  */
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') {
-    navigator.sendBeacon('/murphunt/analytic-logger', buildAnalyticsData());
+    navigator.sendBeacon('/murphunt/analytic-logger', JSON.stringify(analyticsData));
   }
 });
 
 
 /**
- * Returns the analytical data to be sent via sendBeacon()
+ * Returns true if request is from mobile device, false otherwise
  */
-const buildAnalyticsData = () => {
-  const lcpObserver = getLargestContentfulPaint();
-  const fcpObserver = getFirstContentfulPaint();
-  return {
-    lcp: 'TODO: pull data from observer',
-    fcp: 'TODO: pull data from observer',
-    device: isMobileDevice() ? MOBILE : DESKTOP,
-    userType: isRobot() ? ROBOT : HUMAN,
-  };
+function isMobileDevice() {
+  if (navigator.userAgentData) {
+    return navigator.userAgentData.mobile;
+  }
+  return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 };
 
-
 /**
- * Returns true if request is from mobile device, false otherwise
- * TODO: best way to determine mobile device?
+ * Returns true if request is likely from a robot, false otherwise
+ * 
+ * bot: googlebot, bingbot, etc. => search indexing
+ * spider: baiduspider, sogou spider, etc. => crawling
+ * crawl: various scraping => scraping/indexing
+ * slurp: yahoo!'s crawler => legacy crawler
+ * mediapartners: Google's AdSense crawler used for ad content analysis
+ * 
  */
-const isMobileDevice = () => {};
+function isRobot() {
+  if (navigator.userAgentData) {
+    const brands = navigator.userAgentData.brands
+    .map(b => b.brand.toLowerCase())
+    .join(' ');
+    return /bot|crawl|spider/.test(brands);
+  }
+  return /bot|crawl|spider|slurp|mediapartners/i.test(navigator.userAgent);
 
-/**
- * Returns true if request is from robot, false otherwise
- * TODO: best way to determine robot status? user-agent?
- */
-const isRobot = () => {};
+};
 
 /**
  * Returns the data for Largest Contentful Paint (LCP)
  */
-const getLargestContentfulPaint = () => {
-  const observer = new PerformanceObserver((list) => {
-    list.getEntries().forEach((entry) => {
-      console.log(`The time to ${entry.name} was ${entry.startTime} milliseconds.`)
+function initializeLcpObserver() {
+  try {
+    const observer = new PerformanceObserver((list) => {
+    const entries = list.getEntries();
+    const lastEntry = entries[entries.length - 1]; // Use the latest LCP candidate
+    console.log(`The time to ${lastEntry.name} was ${lastEntry.startTime} milliseconds.`);
+      analyticsData.lcp = lastEntry.startTime;
     });
-  });
-
-  observer.observe({ type: 'largest-contentful-paint', buffered: true });
-  return observer;
+    observer.observe({ type: 'largest-contentful-paint', buffered: true });
+  } catch (e) {
+    console.warn('LCP observer not supported:', e)
+  }
 };
 /**
  * Returns the data for First Contentful Paint (FCP)
  */
-const getFirstContentfulPaint = () => {
-  const observer = new PerformanceObserver((list) => {
-    list.getEntries().forEach((entry) => {
-      if (entry.name === 'first-contentful-paint') {
-        console.log(`The time to ${entry.name} was ${entry.startTime} milliseconds.`)
-      }
+function initializeFcpObserver() {
+  try {
+    const observer = new PerformanceObserver((list) => {
+      list.getEntries().forEach((entry) => {
+        if (entry.name === 'first-contentful-paint') {
+          console.log(`The time to LCP was ${entry.startTime} milliseconds.`);
+          analyticsData.fcp = entry.startTime;
+        }
+      });
     });
-  });
-
-  observer.observe({ type: 'paint', buffered: true });
-  return observer;
+    observer.observe({ type: 'paint', buffered: true });
+  } catch (e) {
+    console.warn('FCP observer not supported:', e)
+  }
 };
 
