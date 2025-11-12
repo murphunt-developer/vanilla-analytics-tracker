@@ -40,9 +40,7 @@ perfObs('paint', (e) => {
   }
 });
 perfObs('event', (e) => {
-  console.log('event occured');
   if (e.duration > (analyticsData?.inp?.duration || 0)) {
-    console.log('event added')
     analyticsData.inp.duration = e.duration;
     analyticsData.inp.name = e.name;
     analyticsData.inp.startTime = e.startTime;
@@ -146,7 +144,6 @@ function addTtfbMetric() {
 }
 
 function aggregateAttributions(attrs) {
-  console.log(`Attributes: ${attrs}`);
   if (attrs?.length > 0) {
     const longTaskdata = [];
     attrs.forEach(a => {
