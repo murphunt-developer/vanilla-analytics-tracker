@@ -18,7 +18,7 @@ A lightweight, privacy-focused analytics tracker built with vanilla JavaScript a
 ## How to Run Locally
 1. Ensure Node.js is installed.
 2. Navigate to the project folder.
-3. Run the server: `node server/index.js`
+3. Run the server: `node server/server.js`
 4. Open `public/dashboard.html` in your browser.
 
 ## Deployment to Hostinger

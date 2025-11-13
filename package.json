@@ -2,7 +2,7 @@
   "name": "analytics_tracker",
   "version": "1.0.0",
   "description": "A lightweight, privacy-focused analytics tracker built with vanilla JavaScript and Node.js.",
-  "main": "index.js",
+  "main": "server.js",
   "directories": {
     "doc": "docs"
   },
