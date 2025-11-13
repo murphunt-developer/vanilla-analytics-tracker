@@ -1,18 +1,18 @@
 import { createSecureServer } from 'node:http2';
-import fs, { appendFileSync, readFileSync, createReadStream } from 'node:fs';
+import { appendFileSync, readFileSync, createReadStream } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import https from 'https';
 
-
+// TODO: add client's domain(s) to this list for validation
+const ALLOWED_DOMAINS = ['https://www.amazon.com'];
 /*
 To generate a cert and key for this example:
 openssl req -x509 -newkey rsa:2048 -nodes -sha256 -subj '/CN=localhost' \
   -keyout localhost-privkey.pem -out localhost-cert.pem
 
-TODO: automate this cert/key creation
-
+TODO: remove once deployed to hostinger
 */
 
 // const __dirname = new URL('.', import.meta.url).pathname;
@@ -27,6 +27,24 @@ const options = {
 
 // ---- HTTP/2 server for static JS ----
 const h2Server = createSecureServer(options, (req, res) => {
+  if (req.method === 'OPTIONS') {
+    if (ALLOWED_DOMAINS.includes(req.headers.origin)) {
+      res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
+      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      res.writeHead(204);
+      res.end();
+      return;
+    } else {
+      res.writeHead(403).end('Forbidden');
+      return;
+    }
+  }
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  if (req.headers.origin && !ALLOWED_DOMAINS.includes(req.headers.origin)) {
+    logBadActor(req, 'badServerRequests.txt');
+    return res.writeHead(403).end('Forbidden');
+  }
   logServerRequest(req, 'trackerJsLogs.txt');
   if (req.url === '/tracker.js') {
     res.writeHead(200, { 'Content-Type': 'application/javascript' });
@@ -57,14 +75,28 @@ const httpsServer = https.createServer(options, (req, res) => {
 });
 httpsServer.listen(8444, () => console.log('HTTPS server running on 8444'));
 
+
+/**
+ * Helper function to log bad requests
+ * @param {*} req 
+ */
+const logBadActor = (req, file) => {
+  const request = {
+    domain: req.headers.origin,
+    userAgent: req.headers['user-agent'],
+    timestamp: Date.now()
+  }
+  appendFileSync(file, JSON.stringify(request) + '\n-------------------------------------------------\n');
+}
+
 /**
  * Helper function to log request data to log file.
  * @param {*} req 
  */
 const logServerRequest = (req, file) => {
   const request = {
-    path: req.url,
-    userAgent: req.headers['user-agent']
+    userAgent: req.headers['user-agent'],
+    timestamp: Date.now()
   }
   appendFileSync(file, JSON.stringify(request) + '\n-------------------------------------------------\n');
 }
@@ -76,8 +108,8 @@ const logServerRequest = (req, file) => {
  */
 const logAnalyticsData = (file, data) => {
   const request = {
-    client: 'testing',
     data,
+    timestamp: Date.now()
   }
   appendFileSync(file, JSON.stringify(request) + '\n-------------------------------------------------\n');
 }
