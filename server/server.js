@@ -1,8 +1,8 @@
+import 'dotenv/config';
 import { createSecureServer } from 'node:http2';
 import { readFileSync } from 'node:fs';
 import https from 'https';
 import { logger, contentTypeMiddleware } from './middleware.js';
-import { logBadActor } from './loggers.js';
 import { 
   trackerJsFileHandler, 
   notFoundHanlder, 
@@ -22,8 +22,8 @@ TODO: remove once deployed to hostinger
 */
 
 const options = {
-  key: readFileSync('localhost-privkey.pem'),
-  cert: readFileSync('localhost-cert.pem'),
+  key: readFileSync('server/localhost-privkey.pem'),
+  cert: readFileSync('server/localhost-cert.pem'),
 };
 
 // ---- HTTP/2 server for static JS ----
@@ -45,7 +45,6 @@ const h2Server = createSecureServer(options, (req, res) => {
     logger(req, res, () => {
       contentTypeMiddleware(req, res, async () => {
         if (req.headers.origin && !ALLOWED_DOMAINS.includes(req.headers.origin)) {
-          logBadActor(req, 'badServerRequests.txt');
           res.writeHead(403).end('Forbidden');
         } else if (req.url === '/tracker.js' && req.method === 'GET') {
           await trackerJsFileHandler(req, res);
@@ -79,4 +78,3 @@ const httpsServer = https.createServer(options, (req, res) => {
 
 
 httpsServer.listen(8444, () => console.log('HTTPS server running on 8444'));
-

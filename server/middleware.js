@@ -1,11 +1,23 @@
 import path from 'path';
 import { sendLog } from '../cloudwatch/logs.js';
+import util from 'node:util';
 
 // Logger middleware
 export const logger = (req, _, next) => {
-  sendLog(`${req.method} ${req.url}`);
+  const format = (obj) => util.inspect(obj, { depth: null, colors: false, compact: false });
+  sendLog(`
+    ---------------------------------------------------------
+    Method: ${req.method}
+    Url: ${req.url}
+    Query: ${format(req.query)}
+    Ip: ${req.ip}
+    Session: ${format(req.session)}
+    Headers: ${format(req.headers)}
+    Cookies: ${format(req.cookies)}
+    ---------------------------------------------------------
+  `);
   next();
-}
+};
 
 // Content-Type middleware
 export const contentTypeMiddleware = (req, res, next) => {
