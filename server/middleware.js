@@ -1,8 +1,9 @@
 import path from 'path';
+import { sendLog } from '../cloudwatch/logs.js';
 
 // Logger middleware
-export const logger = (req, res, next) => {
-  console.log(`${req.method} ${req.url}`);
+export const logger = (req, _, next) => {
+  sendLog(`${req.method} ${req.url}`);
   next();
 }
 

@@ -7,7 +7,8 @@ const HUMAN = 'human';
 const AJAX_ENDPOINT = 'https://localhost:8444/collect';
 
 let analyticsData = {
-  origin: location.origin, // page sending data
+  hostname: location.hostname,
+  pathname: location.pathname,
   fcp: undefined, // first contentful paint
   lcp: undefined, // largest contentful paint
   ttfb: undefined, // time to first byte

@@ -2,7 +2,7 @@ import path from 'path';
 import fsSync from 'fs';
 import fs from 'fs/promises';
 import url from 'url';
-import { logAnalyticsData } from './loggers.js';
+import { emitAnalyticsData } from '../cloudwatch/metrics.js';
 
 const __filename = url.fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename);
@@ -20,8 +20,8 @@ export const dashboardHandler = async (req, res, next) => {
 export const collectHandler = async (req, res, next) => {
   let body = '';
   req.on('data', chunk => body += chunk);
-  req.on('end', () => {
-    logAnalyticsData('analytics.txt', body);
+  req.on('end', async () => {
+    await emitAnalyticsData(body);
     res.writeHead(200);
     res.end('ok');
   });
