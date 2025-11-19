@@ -2,7 +2,7 @@ import path from 'path';
 import fsSync from 'fs';
 import fs from 'fs/promises';
 import url from 'url';
-import { emitAnalyticsData } from '../cloudwatch/metrics.js';
+import { emitAnalyticsData } from '../mongo/metrics.js';
 
 const __filename = url.fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename);
@@ -12,6 +12,34 @@ const CLIENT_DIR = path.join(__dirname, '../client');
 export const dashboardHandler = async (req, res, next) => {
   const filePath = path.join(__dirname, '../public', 'dashboard.html');
   const data = await fs.readFile(filePath);
+  res.write(data);
+  res.end();
+}
+
+
+/**
+ * Make API call to mongodb for metrics of the client in specified timeframe
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ */
+export const dashboardMetricsHandler = async (req, res, next) => {
+  // TODO: mongodb call
+  const data = {};
+  res.write(data);
+  res.end();
+}
+
+
+/**
+ * Make API call to mongodb for logs of the client in the specified timeframe
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ */
+export const dashboardLogsHandler = async (req, res, next) => {
+  // TODO: mongodb call
+  const data = {};
   res.write(data);
   res.end();
 }

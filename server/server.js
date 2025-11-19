@@ -10,6 +10,7 @@ import {
   dashboardHandler, 
   cssFileHandler 
 } from './handlers.js';
+import { connectToMongo } from '../mongo/db.js';
 
 // TODO: add client's domain(s) to this list for validation
 const ALLOWED_DOMAINS = ['https://www.amazon.com'];
@@ -25,6 +26,8 @@ const options = {
   key: readFileSync('server/localhost-privkey.pem'),
   cert: readFileSync('server/localhost-cert.pem'),
 };
+
+await connectToMongo();
 
 // ---- HTTP/2 server for static JS ----
 const h2Server = createSecureServer(options, (req, res) => {
@@ -42,7 +45,7 @@ const h2Server = createSecureServer(options, (req, res) => {
     }
   } else {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    logger(req, res, () => {
+    logger('info', req, res, () => {
       contentTypeMiddleware(req, res, async () => {
         if (req.headers.origin && !ALLOWED_DOMAINS.includes(req.headers.origin)) {
           res.writeHead(403).end('Forbidden');
@@ -59,16 +62,19 @@ h2Server.listen(8443, () => console.log('HTTP/2 server running on 8443'));
 
 // ---- HTTPS server for analytics ingest ----
 const httpsServer = https.createServer(options, (req, res) => {
-  logger(req, res, () => {
+  logger('info', req, res, () => {
     contentTypeMiddleware(req, res, async () => {
       if (req.url === '/' && req.method === 'GET') {
         // TODO: implement logic
+        // this is my murphunt.com home page
       } else if (req.url === '/collect' && req.method === 'POST') {
         await collectHandler(req, res);
       }  else if (req.url === '/dashboard' && req.method === 'GET') {
         await dashboardHandler(req, res);
       } else if (req.url === '/style.css' && req.method === 'GET') {
         await cssFileHandler(req, res);
+        // TODO: add another handler for /analyitcs explaining how clients 
+        // can add the script tag to their page and get analytics
       } else {
         notFoundHanlder(req, res);
       }

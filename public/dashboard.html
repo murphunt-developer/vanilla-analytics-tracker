@@ -16,3 +16,126 @@
   <!-- TODO: add client.js -->
    <!-- <script src="./client.js" type="module"></script> -->
 </html>
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Analytics Dashboard</title>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f3f3f6;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #1e1e2f;
+      color: white;
+      padding: 16px;
+      font-size: 22px;
+    }
+    .container {
+      padding: 20px;
+      max-width: 1200px;
+      margin: auto;
+    }
+    .section {
+      background: white;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,.1);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    table th, table td {
+      padding: 8px;
+      border-bottom: 1px solid #ddd;
+      font-size: 14px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>📊 Analytics Dashboard</header>
+
+  <div class="container">
+
+    <div class="section">
+      <h2>Metrics (Last 50)</h2>
+      <table id="metricsTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Value</th>
+            <th>Dimensions</th>
+            <th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2>Logs (Last 50)</h2>
+      <table id="logsTable">
+        <thead>
+          <tr>
+            <th>Level</th>
+            <th>Message</th>
+            <th>Metadata</th>
+            <th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <script>
+    async function loadDashboard() {
+      const metrics = await fetch("/dashboard/metrics").then(r => r.json());
+      const logs = await fetch("/dashboard/logs").then(r => r.json());
+
+      // METRICS
+      const metricsBody = document.querySelector("#metricsTable tbody");
+      metricsBody.innerHTML = "";
+      metrics.forEach(m => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${m.metricName}</td>
+          <td>${m.value}</td>
+          <td><pre>${JSON.stringify(m.dimensions)}</pre></td>
+          <td>${new Date(m.timestamp).toLocaleString()}</td>
+        `;
+        metricsBody.appendChild(tr);
+      });
+
+      // LOGS
+      const logsBody = document.querySelector("#logsTable tbody");
+      logsBody.innerHTML = "";
+      logs.forEach(l => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${l.level}</td>
+          <td>${l.message}</td>
+          <td><pre>${JSON.stringify(l.metadata)}</pre></td>
+          <td>${new Date(l.timestamp).toLocaleString()}</td>
+        `;
+        logsBody.appendChild(tr);
+      });
+    }
+
+    // Auto-refresh every 5 seconds
+    loadDashboard();
+    setInterval(loadDashboard, 5000);
+  </script>
+</body>
+</html>

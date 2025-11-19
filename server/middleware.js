@@ -1,11 +1,13 @@
 import path from 'path';
-import { sendLog } from '../cloudwatch/logs.js';
+import { writeLog } from '../mongo/logs.js';
 import util from 'node:util';
 
 // Logger middleware
-export const logger = (req, _, next) => {
+export const logger = async (level, req, _, next) => {
   const format = (obj) => util.inspect(obj, { depth: null, colors: false, compact: false });
-  sendLog(`
+  await writeLog({
+    level,
+    message: `
     ---------------------------------------------------------
     Method: ${req.method}
     Url: ${req.url}
@@ -15,7 +17,9 @@ export const logger = (req, _, next) => {
     Headers: ${format(req.headers)}
     Cookies: ${format(req.cookies)}
     ---------------------------------------------------------
-  `);
+  `,
+    metadata: {}
+  });
   next();
 };
 
